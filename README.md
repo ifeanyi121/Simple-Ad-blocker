@@ -27,7 +27,7 @@ A lightweight, privacy-focused Chrome extension that blocks ads and trackers to 
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/ifeanyi121/simple-ad-blocker.git
+   git clone https://github.com/ifeanyi121/Simple-Ad-Blocker.git
    ```
 
 2. Open Chrome and navigate to `chrome://extensions/`
