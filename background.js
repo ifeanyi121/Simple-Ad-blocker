@@ -1,6 +1,6 @@
 // Background service worker for the ad blocker
 
-// Initialize stats
+// Initialize stats on install
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.set({
     enabled: true,
@@ -10,24 +10,13 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-// Track blocked requests
+// Track blocked requests (only works in developer mode)
 chrome.declarativeNetRequest.onRuleMatchedDebug?.addListener((info) => {
   updateBlockedCount();
 });
 
-// Fallback: Use webRequest if available to count blocks
-if (chrome.webRequest) {
-  chrome.webRequest.onBeforeRequest.addListener(
-    (details) => {
-      // This won't actually block (declarativeNetRequest does that)
-      // but we can use it to track
-    },
-    { urls: ["<all_urls>"] }
-  );
-}
-
 // Update blocked count
-async function updateBlockedCount() {
+async function updateBlockedCount(count = 1) {
   try {
     const data = await chrome.storage.sync.get(['totalBlocked', 'blockedToday', 'lastResetDate']);
     
@@ -40,8 +29,8 @@ async function updateBlockedCount() {
     }
     
     await chrome.storage.sync.set({
-      totalBlocked: (data.totalBlocked || 0) + 1,
-      blockedToday: blockedToday + 1,
+      totalBlocked: (data.totalBlocked || 0) + count,
+      blockedToday: blockedToday + count,
       lastResetDate: today
     });
   } catch (error) {
@@ -49,7 +38,7 @@ async function updateBlockedCount() {
   }
 }
 
-// Listen for messages from popup
+// Listen for messages from popup and content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getStats') {
     chrome.storage.sync.get(['totalBlocked', 'blockedToday', 'enabled'], (data) => {
@@ -64,6 +53,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       chrome.storage.sync.set({ enabled: newState }, () => {
         // Update extension icon based on state
         updateIcon(newState);
+        
+        // Enable or disable the ruleset
+        chrome.declarativeNetRequest.updateEnabledRulesets({
+          enableRulesetIds: newState ? ['ruleset_1'] : [],
+          disableRulesetIds: newState ? [] : ['ruleset_1']
+        }).catch(() => {});
+        
         sendResponse({ enabled: newState });
       });
     });
@@ -79,6 +75,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: true });
     });
     return true;
+  }
+  
+  // Content script reports blocked ad elements
+  if (request.action === 'adBlocked') {
+    updateBlockedCount(request.count || 1);
+    return false;
   }
 });
 
@@ -110,4 +112,20 @@ chrome.runtime.onStartup?.addListener(() => {
       });
     }
   });
+});
+
+// Reset daily stats check using alarms
+chrome.alarms.create('dailyReset', { periodInMinutes: 60 });
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'dailyReset') {
+    chrome.storage.sync.get(['lastResetDate'], (data) => {
+      const today = new Date().toDateString();
+      if (data.lastResetDate !== today) {
+        chrome.storage.sync.set({
+          blockedToday: 0,
+          lastResetDate: today
+        });
+      }
+    });
+  }
 });

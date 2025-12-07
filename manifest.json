@@ -3,10 +3,11 @@
   "name": "Simple Ad Blocker",
   "version": "1.0.0",
   "description": "A lightweight ad blocker extension that blocks common ads and trackers.",
-  "author": "Ifeanyi",
+  "author": "Ifeanyi Obi",
   "permissions": [
     "declarativeNetRequest",
-    "storage"
+    "storage",
+    "alarms"
   ],
   "host_permissions": [
     "<all_urls>"
