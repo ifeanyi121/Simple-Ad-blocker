@@ -17,9 +17,6 @@ A lightweight, privacy-focused Chrome extension that blocks ads and trackers to 
 - **Lightweight**: Minimal impact on browser performance
 - **Privacy-focused**: No data collection, everything runs locally
 
-## Screenshots
-
-*Coming soon*
 
 ## Installation
 
@@ -39,10 +36,6 @@ A lightweight, privacy-focused Chrome extension that blocks ads and trackers to 
 5. Select the `simple-ad-blocker` folder
 
 6. The extension is now installed and active!
-
-### From Chrome Web Store
-
-*Coming soon*
 
 ## Usage
 
